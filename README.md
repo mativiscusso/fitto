@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Fitto 🍽️
 
-## Getting Started
+App de recetas saludables personalizadas según tu objetivo de salud. Elegí qué querés mejorar (colesterol, triglicéridos, glucosa, presión) y te genera una receta apta.
 
-First, run the development server:
+## Tech Stack
+
+- **Next.js 16** (App Router)
+- **Vercel AI SDK** + **Groq** (generación de recetas con IA)
+- **CSS nativo** (sin frameworks)
+- **PWA** (mobile first, instalable)
+
+## Requisitos
+
+- Node.js 18+
+- Una API key de [Groq](https://console.groq.com) (gratis)
+
+## Setup local
 
 ```bash
+# 1. Clonar el repo
+git clone <tu-repo-url>
+cd fitto
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Crear archivo .env con tu API key de Groq
+cp .env.example .env
+# Editar .env y agregar: GROQ_API_KEY=tu_api_key
+
+# 4. Levantar dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrí [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Variables de entorno
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Descripción |
+|----------|-------------|
+| `GROQ_API_KEY` | API key de Groq (gratis en console.groq.com) |
 
-## Learn More
+## Deploy en Vercel
 
-To learn more about Next.js, take a look at the following resources:
+1. Crear proyecto en Vercel
+2. Linking el repo de GitHub
+3. Agregar variable de entorno `GROQ_API_KEY`
+4. Deploy!
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Cómo funciona
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Pantalla 1**: Seleccionás tu objetivo de salud y el tipo de comida
+2. **Pantalla 2**: Te genera una receta con ingredientes, calorías e instrucciones
+3. **Botones**:
+   - 🔄 "Otra" → genera otra receta
+   - "cambiar" en ingrediente → lo sustituye por una alternativa
+   - ✓ "Me sirve" → confirmación
 
-## Deploy on Vercel
+## Modelo de IA
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Usa `llama-3.3-70b-versatile` de Groq. Es rápido, barato (gratis hasta 14k tokens/min) y muy capaz para generar recetas estructuradas en JSON.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Estructura del proyecto
+
+```
+fitto/
+├── src/
+│   └── app/
+│       ├── api/
+│       │   └── recommend/
+│       │       └── route.ts    # Endpoint de generación con IA
+│       ├── globals.css         # Estilos CSS nativos
+│       ├── layout.tsx          # Layout principal + PWA meta
+│       └── page.tsx            # UI de las 2 pantallas
+├── types/
+│   └── recipe.ts               # Tipos y constantes
+├── .env.example
+├── README.md
+└── package.json
+```

@@ -1,65 +1,269 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { Goal, MealType, Recipe, GOALS, MEAL_TYPES } from "@/types/recipe";
+
+type Screen = "select" | "recipe" | "success";
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+  const [screen, setScreen] = useState<Screen>("select");
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [selectedMeal, setSelectedMeal] = useState<MealType | null>(null);
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [changingIngredient, setChangingIngredient] = useState<number | null>(null);
+
+  const handleGenerate = async () => {
+    if (!selectedGoal || !selectedMeal) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          goal: selectedGoal,
+          mealType: selectedMeal,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setRecipe(data.recipe);
+        setScreen("recipe");
+      }
+    } catch (err) {
+      setError("Error al generar la receta. Intentá de nuevo.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleShuffle = async () => {
+    if (!selectedGoal || !selectedMeal) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          goal: selectedGoal,
+          mealType: selectedMeal,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setRecipe(data.recipe);
+      }
+    } catch (err) {
+      setError("Error al generar otra receta.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangeIngredient = async (index: number) => {
+    if (!recipe || !selectedGoal || !selectedMeal) return;
+
+    setChangingIngredient(index);
+    setError(null);
+    try {
+      const currentIngredient = recipe.ingredients[index];
+      const substitute = currentIngredient.substitutes?.[0];
+
+      if (!substitute) {
+        setChangingIngredient(null);
+        return;
+      }
+
+      const newIngredients = [...recipe.ingredients];
+      const remainingSubs = currentIngredient.substitutes?.slice(1) || [];
+      newIngredients[index] = {
+        ...currentIngredient,
+        name: substitute,
+        substitutes: remainingSubs,
+        icon: currentIngredient.icon,
+      };
+
+      setRecipe({ ...recipe, ingredients: newIngredients });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setChangingIngredient(null);
+    }
+  };
+
+  const handleBack = () => {
+    setScreen("select");
+    setRecipe(null);
+    setError(null);
+  };
+
+  const handleNewRecipe = () => {
+    setSelectedGoal(null);
+    setSelectedMeal(null);
+    setRecipe(null);
+    setScreen("select");
+    setError(null);
+  };
+
+  if (screen === "success") {
+    return (
+      <main className="container">
+        <div className="success-message">
+          <div className="success-icon">🍽️</div>
+          <h2 className="success-title">¡Buena elección!</h2>
+          <p className="success-text">
+            Tu menú fue guardado. ¡A cocinar se dijo!
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          <button className="btn-new" onClick={handleNewRecipe}>
+            Generar otra receta
+          </button>
         </div>
       </main>
-    </div>
-  );
+    );
+  }
+
+  if (screen === "select") {
+    return (
+      <main className="container">
+        <h1 className="logo">Fitto</h1>
+        <p className="subtitle">Comé sano según tu objetivo</p>
+
+        <h2 className="section-title">¿Qué querés mejorar?</h2>
+        <div className="goal-grid">
+          {GOALS.map((goal) => (
+            <button
+              key={goal.id}
+              className={`goal-card ${selectedGoal === goal.id ? "selected" : ""}`}
+              onClick={() => setSelectedGoal(goal.id)}
+            >
+              <div className="goal-icon">{goal.icon}</div>
+              <div className="goal-label">{goal.label}</div>
+            </button>
+          ))}
+        </div>
+
+        <h2 className="section-title">¿Para qué comida?</h2>
+        <div className="meal-grid">
+          {MEAL_TYPES.map((meal) => (
+            <button
+              key={meal.id}
+              className={`meal-card ${selectedMeal === meal.id ? "selected" : ""}`}
+              onClick={() => setSelectedMeal(meal.id)}
+            >
+              <div className="meal-icon">{meal.icon}</div>
+              <div className="meal-label">{meal.label}</div>
+            </button>
+          ))}
+        </div>
+
+        {error && <p className="error-message">{error}</p>}
+
+        <button
+          className="btn-generate"
+          onClick={handleGenerate}
+          disabled={!selectedGoal || !selectedMeal || loading}
+        >
+          {loading ? "Buscando receta..." : "Generar receta"}
+        </button>
+
+        {loading && (
+          <div className="loading">
+            <div className="loading-spinner"></div>
+            <p className="loading-text">Preparando tu receta...</p>
+          </div>
+        )}
+      </main>
+    );
+  }
+
+  if (screen === "recipe" && recipe) {
+    const mealInfo = MEAL_TYPES.find((m) => m.id === selectedMeal);
+
+    return (
+      <main className="container">
+        <div className="recipe-screen">
+          <div className="recipe-header">
+            <button className="btn-back" onClick={handleBack}>
+              ←
+            </button>
+            <span className="meal-type-badge">
+              {mealInfo?.icon} {mealInfo?.label}
+            </span>
+          </div>
+
+          <div className="recipe-card">
+            <div className="recipe-image-placeholder">🍽️</div>
+            <div className="recipe-content">
+              <h2 className="recipe-name">{recipe.name}</h2>
+              {recipe.calories && (
+                <p className="recipe-calories">~{recipe.calories} kcal</p>
+              )}
+
+              <h3 className="ingredients-title">Ingredientes</h3>
+              <div className="ingredients-list">
+                {recipe.ingredients.map((ing, index) => (
+                  <div
+                    key={index}
+                    className={`ingredient-chip ${
+                      changingIngredient === index ? "changing" : ""
+                    }`}
+                  >
+                    <span className="ingredient-icon">{ing.icon}</span>
+                    <span>{ing.name}</span>
+                    {ing.substitutes && ing.substitutes.length > 0 && (
+                      <button
+                        className="btn-change-ingredient"
+                        onClick={() => handleChangeIngredient(index)}
+                        disabled={changingIngredient !== null}
+                      >
+                        cambiar
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {recipe.instructions && recipe.instructions.length > 0 && (
+                <>
+                  <h3 className="ingredients-title">Cómo prepararlo</h3>
+                  <ol className="instructions-list">
+                    {recipe.instructions.map((step, i) => (
+                      <li key={i} className="instruction-step">
+                        {step}
+                      </li>
+                    ))}
+                  </ol>
+                </>
+              )}
+            </div>
+          </div>
+
+          {error && <p className="error-message">{error}</p>}
+
+          <div className="recipe-actions">
+            <button className="btn-shuffle" onClick={handleShuffle} disabled={loading}>
+              🔄 Otra
+            </button>
+            <button className="btn-ok" onClick={() => setScreen("success")}>
+              ✓ Me sirve
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  return null;
 }
