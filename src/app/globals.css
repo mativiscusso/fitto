@@ -1,7 +1,26 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    block-size: 100%;
+    color-scheme: light;
+  }
+
+  body {
+    min-block-size: 100%;
+    font-family: 'Nunito', system-ui, sans-serif;
+    background: #fef9f9;
+    color: #4a4a4a;
+    line-height: 1.5;
+    display: grid;
+    place-content: center;
+  }
 }
 
 :root {
@@ -17,21 +36,6 @@
   --text-light: #8a8a8a;
   --radius: 20px;
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-}
-
-@font-face {
-  font-family: 'Nunito';
-  src: url('https://fonts.gstatic.com/s/nunito/v26/XRXI3I6Li01BKofiOc5wtlZ2di8HDLshdTQ3j77e.woff2') format('woff2');
-  font-weight: 400 700;
-  font-style: normal;
-}
-
-body {
-  background: var(--background);
-  color: var(--color-text);
-  font-family: 'Nunito', system-ui, sans-serif;
-  min-height: 100dvh;
-  line-height: 1.5;
 }
 
 .container {
@@ -141,36 +145,47 @@ body {
   color: var(--text);
 }
 
-.btn-generate {
-  width: 100%;
-  padding: 18px 32px;
-  border: none;
-  border-radius: 50px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-  color: var(--text);
+.btn-main {
+  background: black;
+  color: white;
   font-size: 1.1rem;
-  font-weight: 700;
+  padding: 2ch 3ch;
+  text-transform: capitalize;
+  border-radius: 1000px;
+  border: none;
+  position: relative;
+  width: 100%;
   cursor: pointer;
-  transition: all 0.2s ease;
   font-family: inherit;
+  font-weight: 700;
 }
 
-.btn-generate:hover {
+.btn-main::before {
+  --vibrance: 70%;
+  content: " ";
+  position: absolute;
+  inset: 8px -8px -8px 8px;
+  background: linear-gradient(to right in oklch longer hue, oklch(75% 0.2 350) 0%, oklch(75% 0.2 150) 100%);
+  filter: blur(20px);
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0.6;
+}
+
+.btn-main:hover {
   transform: scale(1.02);
-  box-shadow: 0 6px 24px rgba(248, 180, 196, 0.4);
 }
 
-.btn-generate:active {
+.btn-main:active {
   transform: scale(0.98);
 }
 
-.btn-generate:disabled {
-  opacity: 0.6;
+.btn-main:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none;
 }
 
-/* Recipe Screen */
 .recipe-screen {
   animation: fadeIn 0.3s ease-out;
 }
@@ -221,12 +236,12 @@ body {
 
 .recipe-image-placeholder {
   width: 100%;
-  height: 200px;
+  height: 220px;
   background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 4rem;
+  font-size: 5rem;
 }
 
 .recipe-content {
@@ -269,31 +284,10 @@ body {
   border-radius: 12px;
   font-size: 0.85rem;
   color: var(--text);
-  transition: all 0.2s ease;
-}
-
-.ingredient-chip.changing {
-  opacity: 0.5;
 }
 
 .ingredient-icon {
   font-size: 1.1rem;
-}
-
-.btn-change-ingredient {
-  background: none;
-  border: 1px dashed var(--primary-dark);
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  color: var(--primary-dark);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-
-.btn-change-ingredient:hover {
-  background: rgba(248, 180, 196, 0.1);
 }
 
 .recipe-actions {
@@ -302,40 +296,51 @@ body {
   margin-top: 24px;
 }
 
-.btn-shuffle {
-  flex: 1;
-  padding: 14px;
-  border: 2px solid var(--secondary);
-  border-radius: 50px;
+.btn-secondary {
   background: var(--surface);
   color: var(--text);
   font-size: 0.95rem;
-  font-weight: 600;
+  padding: 2ch 2.5ch;
+  border-radius: 1000px;
+  border: 2px solid var(--secondary);
   cursor: pointer;
-  transition: all 0.2s ease;
   font-family: inherit;
+  font-weight: 600;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  transition: all 0.2s ease;
 }
 
-.btn-shuffle:hover {
+.btn-secondary:hover {
   background: var(--secondary);
 }
 
 .btn-ok {
-  flex: 2;
-  padding: 14px;
-  border: none;
-  border-radius: 50px;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
-  color: var(--text);
+  background: black;
+  color: white;
   font-size: 0.95rem;
+  padding: 2ch 3ch;
+  border-radius: 1000px;
+  border: none;
   font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
   font-family: inherit;
+  flex: 2;
+  position: relative;
+  cursor: pointer;
+}
+
+.btn-ok::before {
+  content: " ";
+  position: absolute;
+  inset: 6px -6px -6px 6px;
+  background: linear-gradient(to right in oklch longer hue, oklch(75% 0.2 150) 0%, oklch(75% 0.2 30) 100%);
+  filter: blur(16px);
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0.5;
 }
 
 .btn-ok:hover {
@@ -353,7 +358,7 @@ body {
 }
 
 .success-icon {
-  font-size: 4rem;
+  font-size: 5rem;
   margin-bottom: 16px;
 }
 
@@ -370,16 +375,27 @@ body {
 }
 
 .btn-new {
-  padding: 14px 32px;
-  border: none;
-  border-radius: 50px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-  color: var(--text);
+  background: black;
+  color: white;
   font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  padding: 2ch 3ch;
+  border-radius: 1000px;
+  border: none;
+  font-weight: 700;
   font-family: inherit;
+  position: relative;
+  cursor: pointer;
+}
+
+.btn-new::before {
+  content: " ";
+  position: absolute;
+  inset: 6px -6px -6px 6px;
+  background: linear-gradient(to right in oklch longer hue, oklch(75% 0.2 350) 0%, oklch(75% 0.2 150) 100%);
+  filter: blur(16px);
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0.5;
 }
 
 .btn-new:hover {

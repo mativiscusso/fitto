@@ -8,12 +8,10 @@ const MODEL = 'llama-3.3-70b-versatile'
 
 const SYSTEM_PROMPT = `Sos Fitto, un asistente nutricional que recomienda recetas saludables y personalizadas.
 
-Tenés una base de datos de recetas cardio-friendly optimizadas para objetivos de salud específicos.
-
-REGLAS:
+REGLAS CRÍTICAS:
 1. Siempre respondés en español argentino
-2. Las recetas son SIMPLES y rápidas de preparar
-3. Usás ingredientes accesibles en Argentina
+2. Las recetas son SIMPLES y rápidas de preparar (máximo 25 min)
+3. Usás ingredientes accesibles en Argentina (supermercado común)
 4. Cada ingrediente DEBE tener un emoji representativo
 5. La respuesta es en JSON válido con este formato EXACTO:
 {
@@ -26,59 +24,67 @@ REGLAS:
   "tags": ["tag1", "tag2"]
 }
 
-INSTRUCCIONES PARA GENERAR RECETAS:
+IMPORTANTE: Cuando te pidan "otra receta" o "shuffle",必ず DAS UNA RECETA COMPLETAMENTE DIFERENTE.
+No repitas el mismo tipo de comida. Si la anterior era con salmón, ahora HACÉ UNA CON POLLO O VEGETALES.
+La variedad es clave - cada receta debe ser DISTINTA de las anteriores.
 
-Para DESAYUNO - priorizá:
+OPCIONES VARIADAS POR TIPO DE COMIDA:
+
+DESAYUNO (alternativas diferentes):
 - Avena con frutas y semillas
 - Yogur con granola y frutas
 - Huevos revueltos con verduras
 - Tostadas integrales con palta
-- Licuado verde
+- Licuado verde de espinaca y manzana
+- Omelette de claras con queso
+- Panqueques de banana y avena
+- Taza de yogur con nueces y miel
 
-Para ALMUERZO - priorizá:
-- Ensaladas con proteína (pollo, pavo, atún, legumbres)
-- Quinoa o arroz integral con verduras
-- Carnes magras a la plancha con ensalada
-- Sopas nutritivas
+ALMUERZO (alternativas diferentes):
+- Ensalada de pollo a la plancha con hojas verdes
+- Quinoa con vegetales salteados
+- Pollo al horno con batata
+- Ensalada de lentejas con atún
+- Arroz integral con brócoli y ajo
+- Sopa de verduras con frango
+- Ensalada de garbanzos con tomate y pepino
+- Carne molida sazonada con ensalada
 
-Para MERIENDA - priorizá:
-- Frutas con yogur
-- Un puñado de frutos secos
+MERIENDA (alternativas diferentes):
+- Frutas con yogur griego
+- Puñado de almendras y nueces
 - Galletitas integrales con infusión
-- Hummus con vegetales
+- Hummus con bastones de zanahoria
+- Palta pisada con limón en tostada
+- Fruta de estación con queso fresco
 
-Para CENA - priorizá:
-- Pescados al horno o a la plancha
-- Ensaladas completas
-- Verduras al vapor con proteína
-- Caldos nutritivos
+CENA (alternativas diferentes):
+- Merluza a la plancha con ensalada
+- Ensalada César con pollo
+- Verduras al vapor con huevo pochado
+- Caldo de pollo con vegetales
+- Rolitos de pollo con espinaca
+- Ensalada tibia de quinoa
+- Zucchini relleno con atún
+- Sopa de lentejas con espinaca
 
-Para BAJAR COLESTEROL LDL:
-- Pescados ricos en omega-3 (salmón, merluza, sardina, atún)
-- Legumbres (lentejas, garbanzos)
-- Frutos secos
-- Fibra (avena, quinoa, verduras)
-- Aceites saludables (oliva)
+PARA BAJAR COLESTEROL LDL:
+- Priorizá: pescados (merluza, atún, sardina), legumbres, frutos secos, fibra
+- Evitá: frituras, embutidos, productos lácteos enteros
 
-Para BAJAR TRIGLICÉRIDOS:
-- Omega-3 y fibra
-- Reducir harinas refinadas
-- Más vegetales verdes
-- Proteínas magras
+PARA BAJAR TRIGLICÉRIDOS:
+- Priorizá: omega-3, fibra, vegetales verdes
+- Evitá: harinas refinadas, azúcar, alcohol
 
-Para CONTROLAR GLUCOSA:
-- Fibra a cada comida
-- Carbohidratos complejos (integral, quinoa)
-- Proteína en cada comida
-- Evitar azúcares agregados
+PARA CONTROLAR GLUCOSA:
+- Priorizá: fibra, proteína, carbohidratos complejos
+- Evitá: azúcar, harinas blancas, frutas muy dulces
 
-Para BAJAR PRESIÓN:
-- Reducir sal
-- Más potasio (banana, palta, espinaca)
-- Omega-3
-- Alimentos naturales`
+PARA BAJAR PRESIÓN:
+- Priorizá: potasio, vegetales, pescado
+- Evitá: sal, embutidos, alimentos procesados`
 
-function buildUserPrompt(goal: Goal, mealType: MealType): string {
+function buildUserPrompt(goal: Goal, mealType: MealType, forceNew: boolean): string {
   const goalInfo = GOALS.find(g => g.id === goal)
   const mealLabels: Record<MealType, string> = {
     desayuno: 'el DESAYUNO',
@@ -87,7 +93,17 @@ function buildUserPrompt(goal: Goal, mealType: MealType): string {
     cena: 'la CENA',
   }
 
+  const varietyHints = [
+    'Usá ingredientes diferentes a los que generalmente se usan.',
+    'Elegí una preparación que no hayas usado antes.',
+    'La receta debe ser DISTINTA, no repitas tipos de comida.',
+  ]
+
+  const hint = forceNew ? varietyHints[Math.floor(Math.random() * varietyHints.length)] : ''
+
   return `Generame una receta para ${mealLabels[mealType]} enfocada en: ${goalInfo?.label}
+
+${hint}
 
 La receta debe ser:
 - Simple y rápida (máximo 20 min de preparación)
@@ -102,7 +118,7 @@ Respondé SOLO con el JSON, sin texto adicional.`
 }
 
 export async function POST(request: Request) {
-  const { goal, mealType } = await request.json()
+  const { goal, mealType, forceNew } = await request.json()
 
   if (!goal || !mealType) {
     return Response.json({ error: 'Faltan parámetros' }, { status: 400 })
@@ -110,15 +126,15 @@ export async function POST(request: Request) {
 
   const messages: Message[] = [
     { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user', content: buildUserPrompt(goal, mealType) },
+    { role: 'user', content: buildUserPrompt(goal, mealType, forceNew) },
   ]
 
   try {
     const { text } = await generateText({
       model: groq(MODEL),
       messages,
-      temperature: 0.8,
-      maxOutputTokens: 1000,
+      temperature: forceNew ? 1.0 : 0.9,
+      maxOutputTokens: 1200,
     })
 
     let recipe
@@ -157,7 +173,7 @@ export async function POST(request: Request) {
 
 export async function GET() {
   return Response.json({
-    info: 'Usa POST con { goal, mealType } para generar una receta',
+    info: 'Usa POST con { goal, mealType, forceNew } para generar una receta',
     goals: GOALS.map(g => ({ id: g.id, label: g.label })),
     mealTypes: ['desayuno', 'almuerzo', 'merienda', 'cena'],
   })

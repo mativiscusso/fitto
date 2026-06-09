@@ -5,6 +5,13 @@ import { Goal, MealType, Recipe, GOALS, MEAL_TYPES } from "@/types/recipe";
 
 type Screen = "select" | "recipe" | "success";
 
+const MEAL_ICONS: Record<MealType, string> = {
+  desayuno: "🥣",
+  almuerzo: "🍲",
+  merienda: "🍵",
+  cena: "🌙",
+};
+
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("select");
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
@@ -12,7 +19,6 @@ export default function Home() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [changingIngredient, setChangingIngredient] = useState<number | null>(null);
 
   const handleGenerate = async () => {
     if (!selectedGoal || !selectedMeal) return;
@@ -26,6 +32,7 @@ export default function Home() {
         body: JSON.stringify({
           goal: selectedGoal,
           mealType: selectedMeal,
+          forceNew: true,
         }),
       });
       const data = await res.json();
@@ -56,6 +63,7 @@ export default function Home() {
         body: JSON.stringify({
           goal: selectedGoal,
           mealType: selectedMeal,
+          forceNew: true,
         }),
       });
       const data = await res.json();
@@ -69,37 +77,6 @@ export default function Home() {
       setError("Error al generar otra receta.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleChangeIngredient = async (index: number) => {
-    if (!recipe || !selectedGoal || !selectedMeal) return;
-
-    setChangingIngredient(index);
-    setError(null);
-    try {
-      const currentIngredient = recipe.ingredients[index];
-      const substitute = currentIngredient.substitutes?.[0];
-
-      if (!substitute) {
-        setChangingIngredient(null);
-        return;
-      }
-
-      const newIngredients = [...recipe.ingredients];
-      const remainingSubs = currentIngredient.substitutes?.slice(1) || [];
-      newIngredients[index] = {
-        ...currentIngredient,
-        name: substitute,
-        substitutes: remainingSubs,
-        icon: currentIngredient.icon,
-      };
-
-      setRecipe({ ...recipe, ingredients: newIngredients });
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setChangingIngredient(null);
     }
   };
 
@@ -121,7 +98,7 @@ export default function Home() {
     return (
       <main className="container">
         <div className="success-message">
-          <div className="success-icon">🍽️</div>
+          <div className="success-icon">🎉</div>
           <h2 className="success-title">¡Buena elección!</h2>
           <p className="success-text">
             Tu menú fue guardado. ¡A cocinar se dijo!
@@ -171,7 +148,7 @@ export default function Home() {
         {error && <p className="error-message">{error}</p>}
 
         <button
-          className="btn-generate"
+          className="btn-main"
           onClick={handleGenerate}
           disabled={!selectedGoal || !selectedMeal || loading}
         >
@@ -190,6 +167,7 @@ export default function Home() {
 
   if (screen === "recipe" && recipe) {
     const mealInfo = MEAL_TYPES.find((m) => m.id === selectedMeal);
+    const mealEmoji = MEAL_ICONS[selectedMeal!];
 
     return (
       <main className="container">
@@ -204,7 +182,9 @@ export default function Home() {
           </div>
 
           <div className="recipe-card">
-            <div className="recipe-image-placeholder">🍽️</div>
+            <div className="recipe-image-placeholder">
+              {mealEmoji}
+            </div>
             <div className="recipe-content">
               <h2 className="recipe-name">{recipe.name}</h2>
               {recipe.calories && (
@@ -214,23 +194,9 @@ export default function Home() {
               <h3 className="ingredients-title">Ingredientes</h3>
               <div className="ingredients-list">
                 {recipe.ingredients.map((ing, index) => (
-                  <div
-                    key={index}
-                    className={`ingredient-chip ${
-                      changingIngredient === index ? "changing" : ""
-                    }`}
-                  >
+                  <div key={index} className="ingredient-chip">
                     <span className="ingredient-icon">{ing.icon}</span>
                     <span>{ing.name}</span>
-                    {ing.substitutes && ing.substitutes.length > 0 && (
-                      <button
-                        className="btn-change-ingredient"
-                        onClick={() => handleChangeIngredient(index)}
-                        disabled={changingIngredient !== null}
-                      >
-                        cambiar
-                      </button>
-                    )}
                   </div>
                 ))}
               </div>
