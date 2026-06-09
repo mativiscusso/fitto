@@ -4,8 +4,8 @@ App de recetas saludables personalizadas según tu objetivo de salud. Elegí qu�
 
 ## Tech Stack
 
-- **Next.js 16** (App Router)
-- **Vercel AI SDK** + **Groq** (generación de recetas con IA)
+- **Next.js 15** (App Router)
+- **Vercel AI SDK** + **Groq** (generación de recetas con IA - gratuito)
 - **CSS nativo** (sin frameworks)
 - **PWA** (mobile first, instalable)
 
