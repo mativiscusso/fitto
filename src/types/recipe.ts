@@ -1,6 +1,6 @@
 export type MealType = 'desayuno' | 'almuerzo' | 'merienda' | 'cena'
 
-export type Goal = 'bajar_grasa' | 'ganar_musculo' | 'reducir_colesterol' | 'otro'
+export type Goal = 'perder_peso' | 'ganar_musculo' | 'cuidar_corazon' | 'mas_energia'
 
 export type Recipe = {
   id: string
@@ -31,36 +31,36 @@ export type GoalInfo = {
 
 export const GOALS: GoalInfo[] = [
   {
-    id: 'bajar_grasa',
-    label: 'Bajar grasa corporal',
-    icon: 'bx bx-flame',
+    id: 'perder_peso',
+    label: 'Perder peso',
+    icon: 'bx bx-low-vision',
     description: 'Reduce grasa corporal con déficit calórico inteligente',
     tags: ['high_protein', 'low_carb', 'high_fiber', 'low_calorie'],
-    promptHint: 'Para bajar grasa corporal: déficit calórico con alta proteína para preservar músculo, vegetales abundantes, grasas saludables moderadas, evitar azucares y harinas refinadas.',
+    promptHint: 'Para perder peso: déficit calórico moderado (400-500 kcal debajo), proteína alta (1.8-2g por kg) para preservar músculo, vegetales abundantes, evitar azucares y harinas refinadas.',
   },
   {
     id: 'ganar_musculo',
-    label: 'Ganar masa muscular',
+    label: 'Ganar músculo',
     icon: 'bx bx-dumbbell',
     description: 'Construí músculo con nutrición estratégica',
     tags: ['high_protein', 'calorie_surplus', 'complex_carb', 'timing'],
-    promptHint: 'Para ganar músculo: superávit calórico moderado, proteína alta (1.6-2g por kg), carbohidratos complejos para energía, horarios de comida regulares, buena kali y zinc.',
+    promptHint: 'Para ganar músculo: superávit calórico moderado (300-400 kcal), proteína alta (1.6-2.2g por kg), carbohidratos complejos para energía post-entreno.',
   },
   {
-    id: 'reducir_colesterol',
-    label: 'Reducir colesterol',
+    id: 'cuidar_corazon',
+    label: 'Cuidar el corazón',
     icon: 'bx bx-heart',
-    description: 'Mejorá tu perfil lipídico naturalmente',
+    description: 'Mejorá tu salud cardiovascular',
     tags: ['omega3', 'high_fiber', 'low_sat_fat', 'plant_protein'],
-    promptHint: 'Para reducir colesterol: beta-glucano de avena, omega-3 de pescados azules, fibra soluble de legumbres, reducir saturadas y evitar grasas trans.',
+    promptHint: 'Para cuidar el corazón: omega-3 de pescados azules, fibra soluble de avena y legumbres, reducir saturadas, grasas trans y sal.',
   },
   {
-    id: 'otro',
-    label: 'Otra que quieras',
-    icon: 'bx bx-star',
-    description: 'Personalizá tu objetivo de salud',
-    tags: ['balanced', 'wholesome', 'nutrient_dense'],
-    promptHint: 'Para objetivo general de salud: comida real, variada, colores naturales en cada plato, proteína en cada comida, vegetales la mitad del plato.',
+    id: 'mas_energia',
+    label: 'Tener más energía',
+    icon: 'bx bx-bolt',
+    description: 'Activá tu vitalidad con nutrición inteligente',
+    tags: ['complex_carb', 'iron', 'b_vitamins', 'hydrating'],
+    promptHint: 'Para más energía: carbohidratos complejos (avena, quinoa, integral), hierro de legumbres y carnes rojas, vitaminas B de cereales integrales, hidratación adecuada.',
   },
 ]
 
@@ -184,8 +184,8 @@ export function getIngredientIcon(ingredient: string): string {
 }
 
 export const GOAL_ICON_COLORS: Record<Goal, string> = {
-  'bajar_grasa': '#ff6b6b',
-  'ganar_musculo': '#4dabf7',
-  'reducir_colesterol': '#f8b4c4',
-  'otro': '#ffd43b',
+  'perder_peso': '#888',
+  'ganar_musculo': '#888',
+  'cuidar_corazon': '#888',
+  'mas_energia': '#888',
 }

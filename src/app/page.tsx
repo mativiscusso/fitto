@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { Goal, MealType, Recipe, GOALS, MEAL_TYPES, getRandomFoodImage, GOAL_ICON_COLORS } from "@/types/recipe";
+import { Goal, MealType, Recipe, GOALS, MEAL_TYPES, getRandomFoodImage } from "@/types/recipe";
 
 type Screen = "select" | "recipe" | "success";
 
@@ -203,10 +203,7 @@ export default function Home() {
               className={`goal-card ${selectedGoal === goal.id ? "selected" : ""}`}
               onClick={() => setSelectedGoal(goal.id)}
             >
-              <div
-                className="goal-icon"
-                style={{ color: GOAL_ICON_COLORS[goal.id] }}
-              >
+              <div className="goal-icon">
                 <i className={`${goal.icon} bx-lg`}></i>
               </div>
               <div className="goal-label">{goal.label}</div>

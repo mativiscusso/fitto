@@ -134,11 +134,12 @@
 }
 
 .goal-icon {
-  font-size: 2.5rem;
-  margin-bottom: 10px;
+  font-size: 2.2rem;
+  margin-bottom: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
+  color: var(--text);
 }
 
 .goal-icon i {
@@ -147,6 +148,10 @@
 
 .goal-card:hover .goal-icon i {
   transform: scale(1.1);
+}
+
+.goal-card.selected .goal-icon {
+  color: var(--primary-dark);
 }
 
 .goal-label {
