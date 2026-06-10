@@ -232,6 +232,10 @@ export default function Home() {
 
         {error && <p className="error-message">{error}</p>}
 
+        <a href="/install" className="floating-btn">
+          <i className="bx bx-download"></i>
+        </a>
+
         <div className="fixed-bottom">
           <button
             className="btn-main"
@@ -318,6 +322,10 @@ export default function Home() {
             </div>
 
             {error && <p className="error-message">{error}</p>}
+
+            <a href="/install" className="floating-btn">
+              <i className="bx bx-download"></i>
+            </a>
 
             <div className="recipe-actions-fixed">
               <button className="btn-shuffle" onClick={handleShuffle} disabled={loading}>

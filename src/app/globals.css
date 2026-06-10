@@ -213,15 +213,57 @@
   background: white;
   padding: 16px 20px;
   padding-bottom: max(16px, env(safe-area-inset-bottom));
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.12);
   z-index: 100;
   display: flex;
   justify-content: center;
+  border-radius: 24px 24px 0 0;
+}
+
+.fixed-bottom::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
 }
 
 .fixed-bottom .btn-main {
   max-width: 480px;
   width: 100%;
+}
+
+/* Floating Button */
+.floating-btn {
+  position: fixed;
+  bottom: 110px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: none;
+}
+
+.floating-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.2);
+}
+
+.floating-btn i {
+  color: var(--primary-dark);
+  font-size: 1.5rem;
 }
 
 /* Botón Principal */
@@ -691,11 +733,24 @@
   background: white;
   padding: 16px 20px;
   padding-bottom: max(16px, env(safe-area-inset-bottom));
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.12);
   z-index: 100;
   display: flex;
   gap: 12px;
   justify-content: center;
+  border-radius: 24px 24px 0 0;
+}
+
+.recipe-actions-fixed::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
 }
 
 /* Botón shuffle monocromático */
@@ -829,4 +884,99 @@
   margin-bottom: 16px;
   text-align: center;
   font-weight: 400;
+}
+/* Install Page */
+.install-page {
+  padding-top: 20px;
+}
+
+.install-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.install-subtitle {
+  font-size: 1rem;
+  color: var(--text-light);
+  text-align: center;
+  margin-bottom: 40px;
+  font-weight: 400;
+}
+
+.install-section {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 24px 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+
+.install-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.install-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.install-icon {
+  font-size: 2rem;
+  color: var(--primary-dark);
+}
+
+.install-steps {
+  padding-left: 20px;
+}
+
+.install-steps li {
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.install-steps li:last-child {
+  margin-bottom: 0;
+}
+
+.install-tips {
+  background: linear-gradient(135deg, rgba(197, 232, 197, 0.3) 0%, rgba(184, 212, 227, 0.3) 100%);
+  border-radius: var(--radius-lg);
+  padding: 24px 20px;
+  border: 1px solid rgba(197, 232, 197, 0.5);
+}
+
+.install-tips h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.install-tips h3 i {
+  color: var(--primary-dark);
+}
+
+.install-tips ul {
+  padding-left: 20px;
+}
+
+.install-tips li {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 10px;
+  font-weight: 400;
+  line-height: 1.5;
 }
