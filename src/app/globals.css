@@ -134,8 +134,19 @@
 }
 
 .goal-icon {
-  font-size: 2.2rem;
-  margin-bottom: 8px;
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.goal-icon i {
+  transition: transform 0.2s ease;
+}
+
+.goal-card:hover .goal-icon i {
+  transform: scale(1.1);
 }
 
 .goal-label {
@@ -172,8 +183,18 @@
 }
 
 .meal-icon {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   margin-bottom: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--text-light);
+  transition: color 0.2s ease;
+}
+
+.meal-card.selected .meal-icon,
+.meal-card:hover .meal-icon {
+  color: var(--text);
 }
 
 .meal-label {
@@ -458,18 +479,24 @@
 .btn-back {
   background: none;
   border: none;
-  font-size: 1.5rem;
   cursor: pointer;
   padding: 8px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .meal-type-badge {
   background: var(--secondary);
   color: var(--text);
-  padding: 8px 16px;
+  padding: 8px 14px;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .recipe-card {
@@ -534,13 +561,15 @@
 }
 
 .recipe-reason-icon {
-  font-size: 1.2rem;
   flex-shrink: 0;
-  margin-top: 2px;
+  color: var(--primary-dark);
+  display: flex;
+  align-items: center;
 }
 
 .recipe-reason-text {
   font-weight: 400;
+  line-height: 1.5;
 }
 
 .recipe-calories {
@@ -610,7 +639,9 @@
 }
 
 .ingredient-icon {
-  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  color: var(--primary-dark);
 }
 
 /* Instructions */
@@ -740,6 +771,9 @@
 .success-icon {
   font-size: 5rem;
   margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  color: var(--primary);
 }
 
 .success-title {

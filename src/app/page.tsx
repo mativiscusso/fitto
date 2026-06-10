@@ -2,16 +2,9 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { Goal, MealType, Recipe, GOALS, MEAL_TYPES, getRandomFoodImage } from "@/types/recipe";
+import { Goal, MealType, Recipe, GOALS, MEAL_TYPES, getRandomFoodImage, GOAL_ICON_COLORS } from "@/types/recipe";
 
 type Screen = "select" | "recipe" | "success";
-
-const MEAL_ICONS: Record<MealType, string> = {
-  desayuno: "🌅",
-  almuerzo: "☀️",
-  merienda: "🌤️",
-  cena: "🌙",
-};
 
 function SkeletonSelect() {
   return (
@@ -167,7 +160,9 @@ export default function Home() {
     return (
       <main className="container">
         <div className="success-message">
-          <div className="success-icon">🎉</div>
+          <div className="success-icon">
+            <i className="bx bx-party"></i>
+          </div>
           <h2 className="success-title">¡Buena elección!</h2>
           <p className="success-text">
             Tu menú fue guardado. ¡A cocinar se dijo!
@@ -208,7 +203,12 @@ export default function Home() {
               className={`goal-card ${selectedGoal === goal.id ? "selected" : ""}`}
               onClick={() => setSelectedGoal(goal.id)}
             >
-              <div className="goal-icon">{goal.icon}</div>
+              <div
+                className="goal-icon"
+                style={{ color: GOAL_ICON_COLORS[goal.id] }}
+              >
+                <i className={`${goal.icon} bx-lg`}></i>
+              </div>
               <div className="goal-label">{goal.label}</div>
             </button>
           ))}
@@ -222,7 +222,9 @@ export default function Home() {
               className={`meal-card ${selectedMeal === meal.id ? "selected" : ""}`}
               onClick={() => setSelectedMeal(meal.id)}
             >
-              <div className="meal-icon">{meal.icon}</div>
+              <div className="meal-icon">
+                <i className={`${meal.icon} bx-md`}></i>
+              </div>
               <div className="meal-label">{meal.label}</div>
             </button>
           ))}
@@ -256,10 +258,11 @@ export default function Home() {
           <div className="recipe-screen">
             <div className="recipe-header">
               <button className="btn-back" onClick={handleBack}>
-                ←
+                <i className="bx bx-chevron-left bx-lg"></i>
               </button>
               <span className="meal-type-badge">
-                {mealInfo?.icon} {mealInfo?.label}
+                <i className={`${mealInfo?.icon} bx-sm`}></i>
+                {mealInfo?.label}
               </span>
             </div>
 
@@ -276,7 +279,9 @@ export default function Home() {
 
                 {recipe.reason && (
                   <div className="recipe-reason">
-                    <span className="recipe-reason-icon">💡</span>
+                    <span className="recipe-reason-icon">
+                      <i className="bx bx-bulb bx-sm"></i>
+                    </span>
                     <span className="recipe-reason-text">{recipe.reason}</span>
                   </div>
                 )}
@@ -289,7 +294,9 @@ export default function Home() {
                 <div className="ingredients-list">
                   {recipe.ingredients.map((ing, index) => (
                     <div key={index} className="ingredient-chip">
-                      <span className="ingredient-icon">{ing.icon}</span>
+                      <span className="ingredient-icon">
+                        <i className={`${ing.icon} bx-sm`}></i>
+                      </span>
                       <span>{ing.name}</span>
                     </div>
                   ))}
@@ -314,10 +321,12 @@ export default function Home() {
 
             <div className="recipe-actions-fixed">
               <button className="btn-shuffle" onClick={handleShuffle} disabled={loading}>
-                ↻ Otra
+                <i className="bx bx-refresh bx-sm"></i>
+                Otra
               </button>
               <button className="btn-ok" onClick={() => setScreen("success")}>
-                ✓ Me sirve
+                <i className="bx bx-check bx-sm"></i>
+                Me sirve
               </button>
             </div>
           </div>
