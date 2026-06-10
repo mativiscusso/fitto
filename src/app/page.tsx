@@ -1,117 +1,78 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
-import { Goal, MealType, Recipe, GOALS, MEAL_TYPES, getRandomFoodImage } from "@/types/recipe";
+import {
+  Goal, MealType, Recipe, Ingredient,
+  GOALS, MEAL_TYPES, getFoodImageForMeal,
+} from "@/types/recipe";
+import { INGREDIENT_CATALOG } from "@/lib/ingredients";
 
-type Screen = "select" | "recipe" | "success";
+type Screen = "goal" | "meal" | "success";
 
 type IngredientImage = {
-  name: string
-  url: string | null
-  loading: boolean
-}
+  name: string;
+  url: string | null;
+  loading: boolean;
+};
 
-function SkeletonSelect() {
+// ── Progress Dots ─────────────────────────────────────────────────────────
+function ProgressDots({ step }: { step: number }) {
   return (
-    <div className="skeleton-container">
-      <div className="skeleton-select">
-        <div className="skeleton skeleton-logo"></div>
-        <div className="skeleton skeleton-subtitle"></div>
-        <div className="skeleton-grid">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="skeleton skeleton-grid-item"></div>
-          ))}
-        </div>
-        <div className="skeleton-meal-grid">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="skeleton skeleton-meal-item"></div>
-          ))}
-        </div>
-      </div>
-      <div className="fixed-bottom">
-        <div className="skeleton skeleton-btn"></div>
-      </div>
+    <div className="progress-dots">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className={`progress-dot ${i <= step ? "active" : ""}`} />
+      ))}
     </div>
   );
 }
 
-function SkeletonRecipe() {
-  return (
-    <div className="skeleton-recipe-container">
-      <div className="skeleton-recipe">
-        <div className="skeleton-recipe-header">
-          <div className="skeleton skeleton-back"></div>
-          <div className="skeleton skeleton-badge"></div>
-        </div>
-        <div className="skeleton-card">
-          <div className="skeleton skeleton-image"></div>
-          <div className="skeleton-content">
-            <div className="skeleton skeleton-title"></div>
-            <div className="skeleton skeleton-reason"></div>
-            <div className="skeleton skeleton-text"></div>
-            <div className="skeleton-chips">
-              <div className="skeleton skeleton-chip"></div>
-              <div className="skeleton skeleton-chip"></div>
-              <div className="skeleton skeleton-chip"></div>
-            </div>
-            <div className="skeleton-lines">
-              <div className="skeleton skeleton-line"></div>
-              <div className="skeleton skeleton-line-short"></div>
-              <div className="skeleton skeleton-line"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="fixed-bottom">
-        <div className="skeleton skeleton-btn"></div>
-      </div>
-    </div>
-  );
-}
-
+// ── Main Component ────────────────────────────────────────────────────────
 export default function Home() {
-  const [screen, setScreen] = useState<Screen>("select");
+  const [screen, setScreen] = useState<Screen>("goal");
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [selectedMeal, setSelectedMeal] = useState<MealType | null>(null);
   const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [foodImage, setFoodImage] = useState<string>("/bowl.jpg");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const recipeHistory = useRef<string[]>([]);
-  const [foodImage, setFoodImage] = useState<string>('/bowl.jpg');
   const [ingredientImages, setIngredientImages] = useState<IngredientImage[]>([]);
+  const historyRef = useRef<string[]>([]);
 
-  const fetchIngredientImages = async (ingredients: { name: string }[]) => {
-    const names = ingredients.map(i => i.name)
-    setIngredientImages(names.map(name => ({ name, url: null, loading: true })))
+  // ── Image fetching ──────────────────────────────────────────────────────
+  const fetchImages = async (ingredients: Ingredient[]) => {
+    const names = ingredients.map((i) => i.name);
+    setIngredientImages(names.map((name) => ({ name, url: null, loading: true })));
 
     try {
-      const res = await fetch('/api/ingredients/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/ingredients/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ingredients: names }),
-      })
-      const data = await res.json()
-
+      });
+      const data = await res.json();
       if (data.results) {
-        setIngredientImages(data.results.map((r: any) => ({
-          name: r.name,
-          url: r.url,
-          loading: false,
-        })))
+        setIngredientImages(
+          data.results.map((r: { name: string; url: string | null }) => ({
+            name: r.name,
+            url: r.url,
+            loading: false,
+          }))
+        );
       }
-    } catch (err) {
-      console.error('Error fetching ingredient images:', err)
-      setIngredientImages(names.map(name => ({ name, url: null, loading: false })))
+    } catch {
+      setIngredientImages(names.map((name) => ({ name, url: null, loading: false })));
     }
-  }
+  };
 
+  // ── Generate recipe ─────────────────────────────────────────────────────
   const handleGenerate = async () => {
     if (!selectedGoal || !selectedMeal) return;
-
     setLoading(true);
     setError(null);
-    setFoodImage(getRandomFoodImage());
+    setFoodImage(getFoodImageForMeal(selectedMeal));
+    setIngredientImages([]);
+
     try {
       const res = await fetch("/api/recommend", {
         method: "POST",
@@ -119,277 +80,328 @@ export default function Home() {
         body: JSON.stringify({
           goal: selectedGoal,
           mealType: selectedMeal,
-          history: recipeHistory.current,
-          forceNew: true,
+          history: historyRef.current,
         }),
       });
       const data = await res.json();
-
       if (data.error) {
         setError(data.error);
       } else {
-        recipeHistory.current.push(data.recipe.name);
+        historyRef.current.push(data.templateId || data.recipe.id);
         setRecipe(data.recipe);
-        setScreen("recipe");
-        fetchIngredientImages(data.recipe.ingredients);
+        fetchImages(data.recipe.ingredients);
       }
-    } catch (err) {
-      setError("Error al generar la receta. Intentá de nuevo.");
-      console.error(err);
+    } catch {
+      setError("Error al generar. Intentá de nuevo.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleShuffle = async () => {
-    if (!selectedGoal || !selectedMeal || !recipe) return;
+  // ── Swap single ingredient ──────────────────────────────────────────────
+  const handleSwapIngredient = async (index: number) => {
+    if (!recipe) return;
+    const current = recipe.ingredients[index];
+    const currentCatalogItem = INGREDIENT_CATALOG.find(
+      (item) => item.nameEs === current.name || item.id === current.id
+    );
+    if (!currentCatalogItem) return;
 
-    setLoading(true);
-    setError(null);
-    setFoodImage(getRandomFoodImage());
+    const usedIds = recipe.ingredients.map((i) => i.id).filter(Boolean);
+    const alternatives = INGREDIENT_CATALOG.filter(
+      (item) =>
+        item.category === currentCatalogItem.category &&
+        item.id !== currentCatalogItem.id &&
+        !usedIds.includes(item.id)
+    );
+    if (alternatives.length === 0) return;
+
+    const picked = alternatives[Math.floor(Math.random() * alternatives.length)];
+    const newIngredient: Ingredient = {
+      id: picked.id,
+      name: picked.nameEs,
+      icon: current.icon,
+      category: picked.category,
+      substitutes: [],
+    };
+
+    const newIngredients = recipe.ingredients.map((ing, i) =>
+      i === index ? newIngredient : ing
+    );
+    setRecipe({ ...recipe, ingredients: newIngredients });
+
+    // Fetch image for new ingredient
+    setIngredientImages((prev) =>
+      prev.map((img, i) =>
+        i === index ? { name: newIngredient.name, url: null, loading: true } : img
+      )
+    );
+
     try {
-      const res = await fetch("/api/recommend", {
+      const res = await fetch("/api/ingredients/image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          goal: selectedGoal,
-          mealType: selectedMeal,
-          history: recipeHistory.current,
-          previousRecipe: recipe.name,
-          forceNew: true,
-        }),
+        body: JSON.stringify({ ingredients: [newIngredient.name] }),
       });
       const data = await res.json();
-
-      if (data.error) {
-        setError(data.error);
-      } else {
-        recipeHistory.current.push(data.recipe.name);
-        setRecipe(data.recipe);
-        fetchIngredientImages(data.recipe.ingredients);
+      if (data.results?.[0]) {
+        const result = data.results[0];
+        setIngredientImages((prev) =>
+          prev.map((img, i) =>
+            i === index ? { name: newIngredient.name, url: result.url, loading: false } : img
+          )
+        );
       }
-    } catch (err) {
-      setError("Error al generar otra receta.");
-    } finally {
-      setLoading(false);
+    } catch {
+      setIngredientImages((prev) =>
+        prev.map((img, i) =>
+          i === index ? { name: newIngredient.name, url: null, loading: false } : img
+        )
+      );
     }
   };
 
-  const handleBack = () => {
-    setScreen("select");
-    setRecipe(null);
-    setError(null);
-  };
-
-  const handleNewRecipe = () => {
+  const handleRestart = () => {
+    setScreen("goal");
     setSelectedGoal(null);
     setSelectedMeal(null);
     setRecipe(null);
-    recipeHistory.current = [];
-    setScreen("select");
     setError(null);
+    setIngredientImages([]);
+    historyRef.current = [];
   };
 
+  // ── Success Screen ──────────────────────────────────────────────────────
   if (screen === "success") {
     return (
-      <main className="container">
-        <div className="success-message">
+      <div className="screen">
+        <div className="success-screen">
           <div className="success-icon">
-            <i className="bx bx-party"></i>
+            <i className="bx bx-check-circle"></i>
           </div>
           <h2 className="success-title">¡Buena elección!</h2>
-          <p className="success-text">
-            Tu menú fue guardado. ¡A cocinar se dijo!
-          </p>
-          <button className="btn-new" onClick={handleNewRecipe}>
-            Generar otra receta
+          <p className="success-text">Guardaste tu comida. ¡A preparar!</p>
+          <button className="btn-new" onClick={handleRestart}>
+            <i className="bx bx-refresh"></i>
+            Nueva receta
           </button>
         </div>
-      </main>
+      </div>
     );
   }
 
-  if (screen === "select") {
-    if (loading) {
-      return <SkeletonSelect />;
-    }
-
+  // ── Goal Selection Screen ───────────────────────────────────────────────
+  if (screen === "goal") {
     return (
-      <main className="container">
-        <div className="logo-container">
-          <div className="logo-shine"></div>
-          <Image
-            src="/fitto-logo.png"
-            alt="Fitto"
-            width={160}
-            height={70}
-            className="logo-image"
-            priority
-          />
-        </div>
-        <p className="subtitle">Comé sano según tu objetivo</p>
-
-        <h2 className="section-title">¿Qué querés mejorar?</h2>
-        <div className="goal-grid">
-          {GOALS.map((goal) => (
-            <button
-              key={goal.id}
-              className={`goal-card ${selectedGoal === goal.id ? "selected" : ""}`}
-              onClick={() => setSelectedGoal(goal.id)}
-            >
-              <div className="goal-icon">
-                <i className={`${goal.icon} bx-lg`}></i>
-              </div>
-              <div className="goal-label">{goal.label}</div>
-            </button>
-          ))}
+      <div className="screen">
+        <div className="screen-header screen-header-center">
+          <div className="header-icon">
+            <i className="bx bx-heart-circle"></i>
+          </div>
+          <ProgressDots step={1} />
         </div>
 
-        <h2 className="section-title">¿Para qué comida?</h2>
-        <div className="meal-grid">
+        <h1 className="screen-title">¿Qué objetivo tienes?</h1>
+        <p className="screen-subtitle">Selecciona tu objetivo principal</p>
+
+        <div className="goal-list">
+          {GOALS.map((goal) => {
+            const isSelected = selectedGoal === goal.id;
+            return (
+              <button
+                key={goal.id}
+                className={`goal-item ${isSelected ? "selected" : ""}`}
+                onClick={() => setSelectedGoal(goal.id)}
+              >
+                <div className="goal-item-icon">
+                  <i className={`${goal.icon}`} style={{ fontSize: "1.3rem" }}></i>
+                </div>
+                <div className="goal-item-text">
+                  <div className="goal-item-label">{goal.label}</div>
+                  <div className="goal-item-desc">{goal.description}</div>
+                </div>
+                <div className="goal-radio">
+                  {isSelected && <i className="bx bx-check" style={{ fontSize: "0.8rem" }}></i>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="bottom-bar">
+          <button
+            className="btn-primary"
+            disabled={!selectedGoal}
+            onClick={() => setScreen("meal")}
+          >
+            Continuar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Meal & Recipe Screen ────────────────────────────────────────────────
+  const mealInfo = MEAL_TYPES.find((m) => m.id === selectedMeal);
+  const goalInfo = GOALS.find((g) => g.id === selectedGoal);
+
+  return (
+    <div className="screen">
+      {/* Header */}
+      <div className="screen-header">
+        <button className="btn-back" onClick={() => { setScreen("goal"); setRecipe(null); setError(null); }}>
+          <i className="bx bx-arrow-back"></i>
+        </button>
+        <ProgressDots step={recipe ? 3 : 2} />
+      </div>
+
+      {/* Meal type selector */}
+      <p className="meal-section-label">¿Qué comida quieres?</p>
+      <div className="meal-tabs-wrap">
+        <div className="meal-tabs">
           {MEAL_TYPES.map((meal) => (
             <button
               key={meal.id}
-              className={`meal-card ${selectedMeal === meal.id ? "selected" : ""}`}
-              onClick={() => setSelectedMeal(meal.id)}
+              className={`meal-tab ${selectedMeal === meal.id ? "selected" : ""}`}
+              onClick={() => {
+                setSelectedMeal(meal.id);
+                setRecipe(null);
+                setError(null);
+                setIngredientImages([]);
+              }}
             >
-              <div className="meal-icon">
-                <i className={`${meal.icon} bx-md`}></i>
-              </div>
-              <div className="meal-label">{meal.label}</div>
+              {meal.label}
             </button>
           ))}
         </div>
+      </div>
 
-        {error && <p className="error-message">{error}</p>}
+      {/* Generate button */}
+      <button
+        className="btn-generate"
+        onClick={handleGenerate}
+        disabled={!selectedMeal || loading}
+      >
+        {loading ? (
+          <>
+            <i className="bx bx-loader-alt bx-spin"></i>
+            Generando…
+          </>
+        ) : (
+          <>
+            <i className="bx bx-sparkle"></i>
+            Generar comida
+          </>
+        )}
+      </button>
 
-        <a href="/install" className="floating-btn">
-          <i className="bx bx-download"></i>
-        </a>
+      {error && <p className="error-msg">{error}</p>}
 
-        <div className="fixed-bottom">
+      {/* Recipe result */}
+      {recipe && !loading && (
+        <>
+          {/* Regenerar link */}
           <button
-            className="btn-main"
+            className="btn-regenerate"
             onClick={handleGenerate}
-            disabled={!selectedGoal || !selectedMeal || loading}
+            disabled={loading}
           >
-            Generar receta
+            <i className="bx bx-refresh"></i>
+            Regenerar
           </button>
-        </div>
-      </main>
-    );
-  }
 
-  if (screen === "recipe") {
-    const mealInfo = MEAL_TYPES.find((m) => m.id === selectedMeal);
-
-    if (loading) {
-      return <SkeletonRecipe />;
-    }
-
-    if (recipe) {
-      return (
-        <main className="container">
-          <div className="recipe-screen">
-            <div className="recipe-header">
-              <button className="btn-back" onClick={handleBack}>
-                <i className="bx bx-chevron-left bx-lg"></i>
-              </button>
-              <span className="meal-type-badge">
-                <i className={`${mealInfo?.icon} bx-sm`}></i>
-                {mealInfo?.label}
-              </span>
-            </div>
-
-            <div className="recipe-card">
-              <Image
-                src={foodImage}
-                alt={recipe.name}
-                width={600}
-                height={400}
-                className="recipe-image"
-              />
-              <div className="recipe-content">
-                <h2 className="recipe-name">{recipe.name}</h2>
-
-                {recipe.reason && (
-                  <div className="recipe-reason">
-                    <span className="recipe-reason-icon">
-                      <i className="bx bx-bulb bx-sm"></i>
-                    </span>
-                    <span className="recipe-reason-text">{recipe.reason}</span>
-                  </div>
-                )}
-
-                {recipe.calories && (
-                  <p className="recipe-calories">~{recipe.calories} kcal</p>
-                )}
-
-                <h3 className="ingredients-title">Ingredientes</h3>
-                <div className="ingredient-images-grid">
-                  {recipe.ingredients.map((ing, index) => {
-                    const imgData = ingredientImages.find(i => i.name === ing.name)
-                    return (
-                      <div key={index} className="ingredient-image-card">
-                        <div className="ingredient-image-wrapper">
-                          {imgData?.loading ? (
-                            <div className="ingredient-image-skeleton"></div>
-                          ) : imgData?.url ? (
-                            <Image
-                              src={imgData.url}
-                              alt={ing.name}
-                              width={80}
-                              height={80}
-                              className="ingredient-image"
-                            />
-                          ) : (
-                            <div className="ingredient-image-placeholder">
-                              <i className={`${ing.icon} bx-lg`}></i>
-                            </div>
-                          )}
-                        </div>
-                        <span className="ingredient-image-name">{ing.name}</span>
-                      </div>
-                    )
-                  })}
+          {/* Recipe card */}
+          <div className="recipe-card-h">
+            <Image
+              src={foodImage}
+              alt={recipe.name}
+              width={110}
+              height={110}
+              className="recipe-img-h"
+            />
+            <div className="recipe-details">
+              <p className="recipe-name-h">{recipe.name}</p>
+              <p className="recipe-meal-label">{mealInfo?.label}</p>
+              {mealInfo && (
+                <div className="recipe-meta">
+                  <i className="bx bx-time-five"></i>
+                  <span>{mealInfo.prepMin} min</span>
                 </div>
-
-                {recipe.instructions && recipe.instructions.length > 0 && (
-                  <div className="instructions-section">
-                    <h3 className="instructions-title">Cómo prepararlo</h3>
-                    <ol className="instructions-list">
-                      {recipe.instructions.map((step, i) => (
-                        <li key={i} className="instruction-step">
-                          {step}
-                        </li>
-                      ))}
-                    </ol>
+              )}
+              {goalInfo && (
+                <>
+                  <div className="recipe-tag">
+                    <i className="bx bx-leaf"></i>
+                    <span>{goalInfo.benefit1}</span>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {error && <p className="error-message">{error}</p>}
-
-            <a href="/install" className="floating-btn">
-              <i className="bx bx-download"></i>
-            </a>
-
-            <div className="recipe-actions-fixed">
-              <button className="btn-shuffle" onClick={handleShuffle} disabled={loading}>
-                <i className="bx bx-refresh bx-sm"></i>
-                Otra
-              </button>
-              <button className="btn-ok" onClick={() => setScreen("success")}>
-                <i className="bx bx-check bx-sm"></i>
-                Me sirve
-              </button>
+                  <div className="recipe-tag">
+                    <i className="bx bx-heart"></i>
+                    <span>{goalInfo.benefit2}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        </main>
-      );
-    }
-  }
 
-  return null;
+          {/* Reason box */}
+          {recipe.reason && (
+            <div className="recipe-reason-box">
+              <i className="bx bx-bulb"></i>
+              <p>{recipe.reason}</p>
+            </div>
+          )}
+
+          {/* Ingredients */}
+          <div className="ingredients-header">
+            <span className="ingredients-title-h">Ingredientes</span>
+            <button className="btn-swap-all" onClick={handleGenerate} disabled={loading}>
+              Cambiar ingredientes
+              <i className="bx bx-refresh"></i>
+            </button>
+          </div>
+
+          <div className="ingredient-grid">
+            {recipe.ingredients.map((ing, index) => {
+              const imgData = ingredientImages[index];
+              return (
+                <div key={`${ing.name}-${index}`} className="ingredient-card">
+                  <div className="ingredient-circle-wrap">
+                    {imgData?.loading ? (
+                      <div className="ingredient-circle-skeleton" />
+                    ) : imgData?.url ? (
+                      <Image
+                        src={imgData.url}
+                        alt={ing.name}
+                        width={56}
+                        height={56}
+                        className="ingredient-circle-img"
+                      />
+                    ) : (
+                      <i className={`${ing.icon} ingredient-circle-icon`}></i>
+                    )}
+                  </div>
+                  <span className="ingredient-name">{ing.name}</span>
+                  <button
+                    className="btn-swap-ingredient"
+                    onClick={() => handleSwapIngredient(index)}
+                    title={`Cambiar ${ing.name}`}
+                  >
+                    <i className="bx bx-refresh"></i>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Accept */}
+          <div className="bottom-bar">
+            <button className="btn-primary" onClick={() => setScreen("success")}>
+              <i className="bx bx-check"></i>
+              Me sirve
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }

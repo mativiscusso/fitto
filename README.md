@@ -39,12 +39,13 @@ Abrí [http://localhost:3000](http://localhost:3000)
 | Variable | Descripción |
 |----------|-------------|
 | `GROQ_API_KEY` | API key de Groq (gratis en console.groq.com) |
+| `UNSPLASH_ACCESS_KEY` | API key de Unsplash (gratis en unsplash.com/developers) para imágenes de ingredientes |
 
 ## Deploy en Vercel
 
 1. Crear proyecto en Vercel
 2. Linking el repo de GitHub
-3. Agregar variable de entorno `GROQ_API_KEY`
+3. Agregar variables de entorno `GROQ_API_KEY` y `UNSPLASH_ACCESS_KEY`
 4. Deploy!
 
 ## Cómo funciona
