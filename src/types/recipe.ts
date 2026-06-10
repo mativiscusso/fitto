@@ -17,6 +17,7 @@ export type Recipe = {
 export type Ingredient = {
   name: string
   icon: string
+  image?: string
   substitutes?: string[]
 }
 

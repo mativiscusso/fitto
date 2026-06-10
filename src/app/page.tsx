@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { Goal, MealType, Recipe, GOALS, MEAL_TYPES, getRandomFoodImage } from "@/types/recipe";
 
 type Screen = "select" | "recipe" | "success";
+
+type IngredientImage = {
+  name: string
+  url: string | null
+  loading: boolean
+}
 
 function SkeletonSelect() {
   return (
@@ -73,6 +79,32 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const recipeHistory = useRef<string[]>([]);
   const [foodImage, setFoodImage] = useState<string>('/bowl.jpg');
+  const [ingredientImages, setIngredientImages] = useState<IngredientImage[]>([]);
+
+  const fetchIngredientImages = async (ingredients: { name: string }[]) => {
+    const names = ingredients.map(i => i.name)
+    setIngredientImages(names.map(name => ({ name, url: null, loading: true })))
+
+    try {
+      const res = await fetch('/api/ingredients/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ingredients: names }),
+      })
+      const data = await res.json()
+
+      if (data.results) {
+        setIngredientImages(data.results.map((r: any) => ({
+          name: r.name,
+          url: r.url,
+          loading: false,
+        })))
+      }
+    } catch (err) {
+      console.error('Error fetching ingredient images:', err)
+      setIngredientImages(names.map(name => ({ name, url: null, loading: false })))
+    }
+  }
 
   const handleGenerate = async () => {
     if (!selectedGoal || !selectedMeal) return;
@@ -99,6 +131,7 @@ export default function Home() {
         recipeHistory.current.push(data.recipe.name);
         setRecipe(data.recipe);
         setScreen("recipe");
+        fetchIngredientImages(data.recipe.ingredients);
       }
     } catch (err) {
       setError("Error al generar la receta. Intentá de nuevo.");
@@ -133,6 +166,7 @@ export default function Home() {
       } else {
         recipeHistory.current.push(data.recipe.name);
         setRecipe(data.recipe);
+        fetchIngredientImages(data.recipe.ingredients);
       }
     } catch (err) {
       setError("Error al generar otra receta.");
@@ -292,15 +326,32 @@ export default function Home() {
                 )}
 
                 <h3 className="ingredients-title">Ingredientes</h3>
-                <div className="ingredients-list">
-                  {recipe.ingredients.map((ing, index) => (
-                    <div key={index} className="ingredient-chip">
-                      <span className="ingredient-icon">
-                        <i className={`${ing.icon} bx-sm`}></i>
-                      </span>
-                      <span>{ing.name}</span>
-                    </div>
-                  ))}
+                <div className="ingredient-images-grid">
+                  {recipe.ingredients.map((ing, index) => {
+                    const imgData = ingredientImages.find(i => i.name === ing.name)
+                    return (
+                      <div key={index} className="ingredient-image-card">
+                        <div className="ingredient-image-wrapper">
+                          {imgData?.loading ? (
+                            <div className="ingredient-image-skeleton"></div>
+                          ) : imgData?.url ? (
+                            <Image
+                              src={imgData.url}
+                              alt={ing.name}
+                              width={80}
+                              height={80}
+                              className="ingredient-image"
+                            />
+                          ) : (
+                            <div className="ingredient-image-placeholder">
+                              <i className={`${ing.icon} bx-lg`}></i>
+                            </div>
+                          )}
+                        </div>
+                        <span className="ingredient-image-name">{ing.name}</span>
+                      </div>
+                    )
+                  })}
                 </div>
 
                 {recipe.instructions && recipe.instructions.length > 0 && (
