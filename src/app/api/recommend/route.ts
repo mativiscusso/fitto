@@ -21,10 +21,13 @@ REGLAS CRÍTICAS:
   ],
   "instructions": ["paso 1", "paso 2"],
   "calories": numero,
-  "tags": ["tag1", "tag2"]
+  "tags": ["tag1", "tag2"],
+  "reason": "Explicación breve de por qué esta receta es buena para el objetivo seleccionado (máximo 80 caracteres)"
 }
 
-IMPORTANTE: Cuando te pidan "otra receta" o "shuffle",必ず DAS UNA RECETA COMPLETAMENTE DIFERENTE.
+IMPORTANTE: El campo "reason" es una explicación corta y persuasiva de por qué esta receta ayuda al objetivo de salud del usuario. Debe ser concreta y basadas en evidencia nutricional simple.
+
+Cuando te pidan "otra receta" o "shuffle",必ず DAS UNA RECETA COMPLETAMENTE DIFERENTE.
 No repitas el mismo tipo de comida. Si la anterior era con salmón, ahora HACÉ UNA CON POLLO O VEGETALES.
 La variedad es clave - cada receta debe ser DISTINTA de las anteriores.
 
@@ -84,7 +87,7 @@ PARA BAJAR PRESIÓN:
 - Priorizá: potasio, vegetales, pescado
 - Evitá: sal, embutidos, alimentos procesados`
 
-function buildUserPrompt(goal: Goal, mealType: MealType, forceNew: boolean): string {
+function buildUserPrompt(goal: Goal, mealType: MealType, forceNew: boolean, previousRecipe?: string): string {
   const goalInfo = GOALS.find(g => g.id === goal)
   const mealLabels: Record<MealType, string> = {
     desayuno: 'el DESAYUNO',
@@ -97,9 +100,15 @@ function buildUserPrompt(goal: Goal, mealType: MealType, forceNew: boolean): str
     'Usá ingredientes diferentes a los que generalmente se usan.',
     'Elegí una preparación que no hayas usado antes.',
     'La receta debe ser DISTINTA, no repitas tipos de comida.',
+    'Si la receta anterior tenía X ingrediente, ahora usá ingredientes completamente diferentes.',
   ]
 
-  const hint = forceNew ? varietyHints[Math.floor(Math.random() * varietyHints.length)] : ''
+  let hint = ''
+  if (forceNew && previousRecipe) {
+    hint = `La receta anterior fue "${previousRecipe}". Ahora generá algo MUY diferente - otra categoría de comida, otros ingredientes principales, otra forma de preparación. NO repitas categorías similares.`
+  } else if (forceNew) {
+    hint = varietyHints[Math.floor(Math.random() * varietyHints.length)]
+  }
 
   return `Generame una receta para ${mealLabels[mealType]} enfocada en: ${goalInfo?.label}
 
@@ -113,12 +122,13 @@ La receta debe ser:
 - Incluir los ingredientes alternativos por si no tiene alguno
 - Incluir instrucciones breves de preparación
 - Calorías aproximadas
+- Incluir un campo "reason" corto y persuasivo (máximo 80 caracteres) de por qué esta receta ayuda a ${goalInfo?.label.toLowerCase()}
 
 Respondé SOLO con el JSON, sin texto adicional.`
 }
 
 export async function POST(request: Request) {
-  const { goal, mealType, forceNew } = await request.json()
+  const { goal, mealType, forceNew, history, previousRecipe } = await request.json()
 
   if (!goal || !mealType) {
     return Response.json({ error: 'Faltan parámetros' }, { status: 400 })
@@ -126,7 +136,7 @@ export async function POST(request: Request) {
 
   const messages: Message[] = [
     { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user', content: buildUserPrompt(goal, mealType, forceNew) },
+    { role: 'user', content: buildUserPrompt(goal, mealType, forceNew, previousRecipe) },
   ]
 
   try {
@@ -134,7 +144,7 @@ export async function POST(request: Request) {
       model: groq(MODEL),
       messages,
       temperature: forceNew ? 1.0 : 0.9,
-      maxOutputTokens: 1200,
+      maxOutputTokens: 1400,
     })
 
     let recipe
@@ -144,6 +154,11 @@ export async function POST(request: Request) {
         recipe = JSON.parse(jsonMatch[0])
         recipe.id = crypto.randomUUID()
         recipe.mealType = [mealType]
+
+        if (!recipe.reason) {
+          const goalInfo = GOALS.find(g => g.id === goal)
+          recipe.reason = `Rica en fibra y proteína, ideal para ${goalInfo?.label.toLowerCase()}`
+        }
 
         recipe.ingredients = recipe.ingredients.map((ing: any) => ({
           name: ing.name,
@@ -173,7 +188,7 @@ export async function POST(request: Request) {
 
 export async function GET() {
   return Response.json({
-    info: 'Usa POST con { goal, mealType, forceNew } para generar una receta',
+    info: 'Usa POST con { goal, mealType, forceNew, previousRecipe } para generar una receta',
     goals: GOALS.map(g => ({ id: g.id, label: g.label })),
     mealTypes: ['desayuno', 'almuerzo', 'merienda', 'cena'],
   })

@@ -11,6 +11,7 @@ export type Recipe = {
   mealType: MealType[]
   calories?: number
   instructions?: string[]
+  reason?: string
 }
 
 export type Ingredient = {
