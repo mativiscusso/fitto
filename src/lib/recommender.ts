@@ -4,7 +4,9 @@ import { findIngredientById, IngredientCatalogItem } from './ingredients'
 export type GeneratedIngredient = {
   id: string
   name: string       // Spanish name
-  icon: string       // boxicon class
+  icon: string       // boxicon class (legacy, kept for swap logic)
+  emoji: string      // category emoji shown in UI
+  serving: string    // e.g. "150g", "½ taza"
   searchTerms: string[]
 }
 
@@ -17,6 +19,7 @@ export type GeneratedMeal = {
   calories: number
   reason: string
   tags: string[]
+  instructions: string[]
 }
 
 // --- Ingredient ID groups ---
@@ -225,7 +228,7 @@ const TEMPLATES: Template[] = [
   { id: 'd_sardines_salad', mealTypes: ['dinner'], slots: [['sardines', 'mackerel'], SALAD_VEGS, SALAD_VEGS, ['olive_oil']] },
 ]
 
-// --- Icon mapping ---
+// --- Icon mapping (legacy, kept for swap logic) ---
 
 const ICON_MAP: Record<string, string> = {
   protein: 'bx bx-bowl-rice',
@@ -239,6 +242,226 @@ const ICON_MAP: Record<string, string> = {
 
 function getIngredientIcon(item: IngredientCatalogItem): string {
   return ICON_MAP[item.category] || 'bx bx-food'
+}
+
+// --- Category emoji ---
+
+function getCategoryEmoji(item: IngredientCatalogItem): string {
+  const id = item.id
+  if (['chicken_breast', 'chicken_thigh', 'turkey_breast'].includes(id)) return '🍗'
+  if (['lean_beef', 'sirloin', 'pork_tenderloin'].includes(id)) return '🥩'
+  if (['tuna', 'salmon', 'sardines', 'mackerel', 'hake'].includes(id)) return '🐟'
+  if (id === 'shrimp') return '🦐'
+  if (EGGS.includes(id)) return '🥚'
+  if (DAIRY_PROTEIN.includes(id)) return '🥛'
+  if (item.category === 'dairy') return '🧀'
+  if (LEGUMES.includes(id)) return '🫘'
+  if (['tofu', 'tempeh', 'seitan', 'whey_protein'].includes(id)) return '🌱'
+  if (id === 'avocado') return '🥑'
+  if (['olive_oil', 'coconut_oil'].includes(id)) return '🫒'
+  if (['peanut_butter', 'tahini'].includes(id)) return '🥜'
+  if (NUTS.includes(id)) return '🥜'
+  if (SEEDS.includes(id)) return '🌱'
+  if (id === 'oats') return '🌾'
+  if (GRAINS.includes(id)) return '🌾'
+  if (['whole_wheat_wrap', 'corn_tortilla'].includes(id)) return '🌮'
+  if (['whole_wheat_pasta'].includes(id)) return '🍝'
+  if (['sweet_potato', 'potato'].includes(id)) return '🥔'
+  if (BREADS.includes(id)) return '🍞'
+  if (['granola', 'rice_cakes'].includes(id)) return '🌾'
+  if (id === 'banana') return '🍌'
+  if (BERRIES.includes(id)) return '🍓'
+  if (item.category === 'fruit') return '🍎'
+  if (item.category === 'vegetable') return '🥦'
+  return '🍽️'
+}
+
+// --- Serving sizes ---
+
+function getServing(item: IngredientCatalogItem): string {
+  const id = item.id
+  if (id === 'egg_whites') return '3 claras'
+  if (id === 'eggs') return '2 unidades'
+  if (['banana', 'apple', 'pear', 'orange', 'peach', 'kiwi', 'mango'].includes(id)) return '1 unidad'
+  if (BERRIES.includes(id)) return '½ taza'
+  if (['pineapple', 'grapes'].includes(id)) return '1 taza'
+  if (id === 'avocado') return '½ unidad'
+  if (['olive_oil', 'coconut_oil'].includes(id)) return '1 cdita'
+  if (['peanut_butter', 'tahini'].includes(id)) return '1 cda'
+  if (NUTS.includes(id)) return '30g'
+  if (SEEDS.includes(id)) return '1 cda'
+  if (['whole_wheat_wrap', 'corn_tortilla'].includes(id)) return '1 unidad'
+  if (['whole_wheat_bread', 'whole_grain_toast'].includes(id)) return '2 rebanadas'
+  if (id === 'rice_cakes') return '2 unidades'
+  if (id === 'granola') return '¼ taza'
+  if (id === 'cinnamon') return '1 cdita'
+  if (id === 'dates') return '3 unidades'
+  if (id === 'whey_protein') return '1 scoop (30g)'
+  if (['sweet_potato', 'potato'].includes(id)) return '1 mediana'
+  if (id === 'whole_wheat_pasta') return '80g'
+  if (id === 'oats') return '¾ taza (60g)'
+  if (GRAINS.includes(id)) return '½ taza'
+  if (LEGUMES.includes(id)) return '½ taza'
+  if ([...LEAN_PROTEINS, ...FISH].includes(id)) return '150g'
+  if (['tofu', 'tempeh', 'seitan'].includes(id)) return '150g'
+  if (DAIRY_PROTEIN.includes(id)) return '150g'
+  if (item.category === 'dairy') return '100g'
+  if (item.category === 'vegetable') return '1 taza'
+  if (item.category === 'carb') return '80g'
+  return '1 porción'
+}
+
+// --- Preparation instructions ---
+
+function generateInstructions(templateId: string, ingredients: IngredientCatalogItem[]): string[] {
+  const hasOats    = ingredients.some(i => i.id === 'oats')
+  const hasEggs    = ingredients.some(i => EGGS.includes(i.id))
+  const hasMeat    = ingredients.some(i => LEAN_PROTEINS.includes(i.id))
+  const hasFish    = ingredients.some(i => FISH.includes(i.id))
+  const hasLegumes = ingredients.some(i => LEGUMES.includes(i.id))
+  const hasVegs    = ingredients.some(i => i.category === 'vegetable')
+  const hasDairy   = ingredients.some(i => DAIRY_PROTEIN.includes(i.id))
+  const hasFruits  = ingredients.some(i => i.category === 'fruit')
+  const hasGrain   = ingredients.some(i => GRAINS.includes(i.id))
+  const hasBreads  = ingredients.some(i => BREADS.includes(i.id))
+  const hasWrap    = ingredients.some(i => ['whole_wheat_wrap', 'corn_tortilla'].includes(i.id))
+  const hasOil     = ingredients.some(i => ['olive_oil', 'coconut_oil'].includes(i.id))
+  const hasNuts    = ingredients.some(i => NUTS.includes(i.id) || SEEDS.includes(i.id))
+  const hasPasta   = ingredients.some(i => i.id === 'whole_wheat_pasta')
+  const hasWhey    = ingredients.some(i => i.id === 'whey_protein')
+
+  // Smoothie / protein shake
+  if (hasWhey || templateId.includes('smoothie') || templateId.includes('shake')) {
+    return [
+      'Colocar todos los ingredientes en la licuadora.',
+      'Agregar ½ taza de agua o leche vegetal.',
+      'Licuar hasta obtener una mezcla suave.',
+      'Servir frío de inmediato.',
+    ]
+  }
+
+  // Overnight oats
+  if (hasOats && hasDairy && templateId.includes('overnight')) {
+    return [
+      'Mezclar la avena con el yogur en un frasco.',
+      hasFruits ? 'Agregar la fruta cortada y mezclar.' : '',
+      'Tapar y refrigerar al menos 6 horas (ideal toda la noche).',
+      hasNuts ? 'Al servir, decorar con semillas o frutos secos.' : '',
+    ].filter(Boolean)
+  }
+
+  // Oatmeal
+  if (hasOats) {
+    return [
+      'Llevar ¾ taza de agua a hervor en una cacerola.',
+      'Agregar la avena y cocinar 5 minutos a fuego medio revolviendo.',
+      hasFruits ? 'Incorporar la fruta cortada y mezclar.' : '',
+      hasDairy ? 'Servir con el yogur al lado.' : '',
+      hasNuts ? 'Terminar con semillas o frutos secos encima.' : '',
+    ].filter(Boolean)
+  }
+
+  // Wrap / tortilla
+  if (hasWrap) {
+    return [
+      'Calentar la tortilla en sartén seco 30 segundos por lado.',
+      (hasMeat || hasFish) ? 'Cocinar la proteína a la plancha con sal y pimienta.' : '',
+      hasVegs ? 'Lavar y cortar las verduras frescas.' : '',
+      'Distribuir el relleno en el centro de la tortilla.',
+      'Doblar los laterales y enrollar. Cortar al medio.',
+    ].filter(Boolean)
+  }
+
+  // Toast / bread
+  if (hasBreads) {
+    return [
+      'Tostar el pan a punto dorado.',
+      hasEggs ? 'Cocinar los huevos a gusto (revueltos, pochados o fritos).' : '',
+      hasMeat ? 'Calentar la proteína en sartén 2-3 minutos.' : '',
+      hasFruits || hasDairy ? 'Preparar los ingredientes frescos.' : '',
+      'Montar todos los ingredientes sobre la tostada y servir.',
+    ].filter(Boolean)
+  }
+
+  // Omelette / egg base
+  if (hasEggs && !hasMeat && !hasFish && !hasGrain) {
+    return [
+      'Batir los huevos con sal y pimienta.',
+      hasVegs ? 'Saltear las verduras en sartén con unas gotas de aceite.' : '',
+      'Volcar los huevos batidos sobre las verduras.',
+      'Cocinar a fuego medio hasta que cuaje por debajo.',
+      'Doblar la tortilla a la mitad y servir caliente.',
+    ].filter(Boolean)
+  }
+
+  // Pasta
+  if (hasPasta) {
+    return [
+      'Cocinar la pasta en agua hirviendo con sal según el paquete (al dente).',
+      (hasMeat || hasFish) ? 'En paralelo, cocinar la proteína a la plancha.' : '',
+      hasVegs ? 'Saltear las verduras en sartén con aceite.' : '',
+      'Mezclar la pasta escurrida con los demás ingredientes.',
+      'Servir caliente con sal y pimienta a gusto.',
+    ].filter(Boolean)
+  }
+
+  // Fish
+  if (hasFish) {
+    return [
+      hasGrain ? 'Cocinar el cereal según instrucciones del paquete.' : '',
+      'Secar el pescado y condimentar con sal, pimienta y limón.',
+      'Cocinar en sartén caliente con aceite 3-4 minutos por lado.',
+      hasVegs ? 'Saltear o cocer las verduras al vapor en paralelo.' : '',
+      'Servir el pescado junto al acompañamiento.',
+    ].filter(Boolean)
+  }
+
+  // Legume salad / soup
+  if (hasLegumes && !hasMeat) {
+    return [
+      hasGrain ? 'Cocinar el cereal según instrucciones.' : '',
+      'Escurrir y enjuagar las legumbres si son de lata.',
+      hasVegs ? 'Lavar y cortar las verduras en trozos.' : '',
+      'Combinar todos los ingredientes en un bowl.',
+      hasOil ? 'Aliñar con aceite de oliva, sal, pimienta y limón al gusto.' : 'Condimentar al gusto.',
+    ].filter(Boolean)
+  }
+
+  // Meat / poultry + veg (most common)
+  if (hasMeat && hasVegs) {
+    return [
+      hasGrain ? 'Cocinar el cereal en agua según las instrucciones (15-20 min).' : '',
+      'Condimentar la proteína con sal, pimienta y especias a gusto.',
+      'Cocinar a la plancha o en sartén con aceite, 5-7 min por lado.',
+      'Saltear o cocer las verduras al vapor hasta tiernas.',
+      'Servir la proteína junto al cereal y las verduras.',
+    ].filter(Boolean)
+  }
+
+  // Yogurt / dairy + fruit (snack)
+  if (hasDairy && hasFruits) {
+    return [
+      'Servir el yogur en un bowl.',
+      'Cortar y agregar la fruta encima.',
+      hasNuts ? 'Espolvorear semillas o frutos secos.' : '',
+    ].filter(Boolean)
+  }
+
+  // Fruit + nuts snack
+  if (hasFruits && hasNuts && !hasDairy && !hasMeat) {
+    return [
+      'Lavar y preparar la fruta.',
+      'Servir junto a los frutos secos o untado de mantequilla.',
+    ]
+  }
+
+  // Fallback
+  return [
+    hasVegs ? 'Lavar y preparar las verduras.' : '',
+    (hasEggs || hasMeat || hasFish) ? 'Cocinar la proteína a la plancha o en sartén.' : '',
+    hasGrain ? 'Cocinar el cereal según instrucciones.' : '',
+    'Combinar todos los ingredientes y condimentar al gusto.',
+  ].filter(Boolean)
 }
 
 // --- Core logic ---
@@ -317,8 +540,12 @@ export function generateMeal(goal: Goal, mealType: MealType, history: string[] =
     id: item.id,
     name: item.nameEs,
     icon: getIngredientIcon(item),
+    emoji: getCategoryEmoji(item),
+    serving: getServing(item),
     searchTerms: item.searchTerms,
   }))
+
+  const instructions = generateInstructions(template.id, resolvedIngredients)
 
   return {
     id: template.id + '_' + Date.now(),
@@ -329,5 +556,6 @@ export function generateMeal(goal: Goal, mealType: MealType, history: string[] =
     calories,
     reason,
     tags: [goal, mealType],
+    instructions,
   }
 }

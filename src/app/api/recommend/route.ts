@@ -21,6 +21,8 @@ export async function POST(request: Request) {
         id: ing.id,
         name: ing.name,
         icon: ing.icon,
+        emoji: ing.emoji,
+        serving: ing.serving,
         category: catalogItem?.category ?? 'other',
         substitutes: [],
       }
@@ -28,7 +30,7 @@ export async function POST(request: Request) {
     calories: meal.calories,
     reason: meal.reason,
     tags: meal.tags,
-    instructions: [],
+    instructions: meal.instructions,
   }
 
   return Response.json({ recipe, templateId: meal.templateId })

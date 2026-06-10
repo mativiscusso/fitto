@@ -30,7 +30,7 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://unpkg.com/boxicons@3.0.0/css/boxicons.min.css" />
       </head>
-      <body className="antialiased">{children}</body>
+      <body>{children}</body>
     </html>
   );
 }

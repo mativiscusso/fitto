@@ -18,6 +18,8 @@ export type Ingredient = {
   id?: string
   name: string
   icon: string
+  emoji?: string
+  serving?: string
   category?: string
   image?: string
   substitutes?: string[]
