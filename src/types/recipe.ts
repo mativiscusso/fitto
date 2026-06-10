@@ -1,6 +1,6 @@
 export type MealType = 'desayuno' | 'almuerzo' | 'merienda' | 'cena'
 
-export type Goal = 'bajar_colesterol_ldl' | 'bajar_trigliceridos' | 'controlar_glucosa' | 'bajar_presion'
+export type Goal = 'bajar_grasa' | 'ganar_musculo' | 'reducir_colesterol' | 'otro'
 
 export type Recipe = {
   id: string
@@ -26,36 +26,41 @@ export type GoalInfo = {
   icon: string
   description: string
   tags: string[]
+  promptHint: string
 }
 
 export const GOALS: GoalInfo[] = [
   {
-    id: 'bajar_colesterol_ldl',
-    label: 'Bajar colesterol LDL',
+    id: 'bajar_grasa',
+    label: 'Bajar grasa corporal',
+    icon: '🔥',
+    description: 'Reduce grasa corporal con déficit calórico inteligente',
+    tags: ['high_protein', 'low_carb', 'high_fiber', 'low_calorie'],
+    promptHint: 'Para bajar grasa corporal: déficit calórico con alta proteína para preservar músculo, vegetales abundantes, grasas saludables moderadas, evitar azucares y harinas refinadas.',
+  },
+  {
+    id: 'ganar_musculo',
+    label: 'Ganar masa muscular',
+    icon: '💪',
+    description: 'Construí músculo con nutrición estratégica',
+    tags: ['high_protein', 'calorie_surplus', 'complex_carb', 'timing'],
+    promptHint: 'Para ganar músculo: superávit calórico moderado, proteína alta (1.6-2g por kg), carbohidratos complejos para energía, horarios de comida regulares, buena kali y zinc.',
+  },
+  {
+    id: 'reducir_colesterol',
+    label: 'Reducir colesterol',
     icon: '❤️',
-    description: 'Mejorá tu perfil lipídico',
+    description: 'Mejorá tu perfil lipídico naturalmente',
     tags: ['omega3', 'high_fiber', 'low_sat_fat', 'plant_protein'],
+    promptHint: 'Para reducir colesterol: omega-3 de pescados, fibra soluble de avena y legumbres, grasas monoinsaturadas de aceite de oliva y palta, reducir saturadas y colesterol dietary.',
   },
   {
-    id: 'bajar_trigliceridos',
-    label: 'Bajar triglicéridos',
-    icon: '💧',
-    description: 'Reduce los triglicéridos en sangre',
-    tags: ['omega3', 'low_sat_fat', 'high_fiber', 'low_calorie'],
-  },
-  {
-    id: 'controlar_glucosa',
-    label: 'Controlar glucosa',
-    icon: '🍬',
-    description: 'Mantené niveles estables de azúcar',
-    tags: ['high_fiber', 'complex_carb', 'low_carb', 'lean_protein'],
-  },
-  {
-    id: 'bajar_presion',
-    label: 'Bajar presión',
-    icon: '📊',
-    description: 'Ayudá a controlar la hipertensión',
-    tags: ['low_sat_fat', 'high_fiber', 'low_sodium', 'omega3'],
+    id: 'otro',
+    label: 'Otra que quieras',
+    icon: '✨',
+    description: 'Personalizá tu objetivo de salud',
+    tags: ['balanced', 'wholesome', 'nutrient_dense'],
+    promptHint: 'Para objetivo general de salud: comida real, variada, colores naturales en cada plato, proteína en cada comida, vegetales la mitad del plato, agua y dormir bien.',
   },
 ]
 
@@ -65,6 +70,22 @@ export const MEAL_TYPES: { id: MealType; label: string; icon: string }[] = [
   { id: 'merienda', label: 'Merienda', icon: '🌤️' },
   { id: 'cena', label: 'Cena', icon: '🌙' },
 ]
+
+export const FOOD_IMAGES = [
+  '/oatmeal.jpg',
+  '/salad.jpg',
+  '/fish.jpg',
+  '/pancakes.jpg',
+  '/breakfast2.jpg',
+  '/bowl.jpg',
+  '/chicken.jpg',
+  '/toast.jpg',
+  '/smoothie.jpg',
+]
+
+export function getRandomFoodImage(): string {
+  return FOOD_IMAGES[Math.floor(Math.random() * FOOD_IMAGES.length)]
+}
 
 export const INGREDIENT_ICONS: Record<string, string> = {
   avena: '🥣',

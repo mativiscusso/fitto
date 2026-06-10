@@ -9,9 +9,9 @@ const MODEL = 'llama-3.3-70b-versatile'
 const SYSTEM_PROMPT = `Sos Fitto, un asistente nutricional que recomienda recetas saludables y personalizadas.
 
 REGLAS CRÍTICAS:
-1. Siempre respondés en español argentino
+1. Siempre respondés en español argentino (neutro, no看你)
 2. Las recetas son SIMPLES y rápidas de preparar (máximo 25 min)
-3. Usás ingredientes accesibles en Argentina (supermercado común)
+3. Usás ingredientes accesibles en Argentina (supermercado común, dietética, mercado)
 4. Cada ingrediente DEBE tener un emoji representativo
 5. La respuesta es en JSON válido con este formato EXACTO:
 {
@@ -22,13 +22,20 @@ REGLAS CRÍTICAS:
   "instructions": ["paso 1", "paso 2"],
   "calories": numero,
   "tags": ["tag1", "tag2"],
-  "reason": "Explicación breve de por qué esta receta es buena para el objetivo seleccionado (máximo 80 caracteres)"
+  "reason": "Explicación detallada de 1-2 oraciones de por qué esta receta es perfecta para el objetivo del usuario. Sea específico sobre los beneficios nutricionales."
 }
 
-IMPORTANTE: El campo "reason" es una explicación corta y persuasiva de por qué esta receta ayuda al objetivo de salud del usuario. Debe ser concreta y basadas en evidencia nutricional simple.
+El campo "reason" es CLAVE. Debe ser una explicación concreta y persuasiva de 1-2 oraciones que conecte directamente los ingredientes con el objetivo de salud. NO sea genérico. Mencioná ingredientes específicos y su beneficio.
 
-Cuando te pidan "otra receta" o "shuffle",必ず DAS UNA RECETA COMPLETAMENTE DIFERENTE.
-No repitas el mismo tipo de comida. Si la anterior era con salmón, ahora HACÉ UNA CON POLLO O VEGETALES.
+Ejemplos de reason BUENO vs MALO:
+- MALO: "Rica en fibra y proteína"
+- BUENO: "La avena aporta betaglucano que reduce el colesterol LDL, mientras que las nueces dan omega-3 para proteger el corazón"
+
+- MALO: "Bueno para ganar músculo"
+- BUENO: "Con 35g de proteína de whey y carbohidratos de banana, esta receta Optimiza la síntesis de proteína muscular post-entreno"
+
+Cuando te pidan "otra receta" o "shuffle", обязательно DAS UNA RECETA COMPLETAMENTE DIFERENTE.
+No repitas el mismo tipo de comida. Si la anterior era con salmón, ahora HACÉ UNA CON POLLO O LEGUMBRES.
 La variedad es clave - cada receta debe ser DISTINTA de las anteriores.
 
 OPCIONES VARIADAS POR TIPO DE COMIDA:
@@ -71,21 +78,34 @@ CENA (alternativas diferentes):
 - Zucchini relleno con atún
 - Sopa de lentejas con espinaca
 
-PARA BAJAR COLESTEROL LDL:
-- Priorizá: pescados (merluza, atún, sardina), legumbres, frutos secos, fibra
-- Evitá: frituras, embutidos, productos lácteos enteros
+PARA BAJAR GRASA CORPORAL:
+- Déficit calórico moderado (400-500 kcal debajo del mantenimiento)
+- Alta proteína (1.8-2g por kg de peso) para preservar músculo
+- Carbohidratos moderados y complejos solo en comidas autour de ejercicio
+- Grasas saludables moderadas (0.8-1g por kg)
+- Vegetal abundante en cada comida para dar volumen y saciedad
 
-PARA BAJAR TRIGLICÉRIDOS:
-- Priorizá: omega-3, fibra, vegetales verdes
-- Evitá: harinas refinadas, azúcar, alcohol
+PARA GANAR MÚSCULO:
+- Superávit calórico moderado (300-400 kcal encima del mantenimiento)
+- Proteína alta (1.6-2.2g por kg de peso)
+- Carbohidratos ample para energía y resíntesis de glucógeno
+- Timing: proteína + carb después de entrenar
+- Micronutrientes: zinc, magnesio, vitamina D
 
-PARA CONTROLAR GLUCOSA:
-- Priorizá: fibra, proteína, carbohidratos complejos
-- Evitá: azúcar, harinas blancas, frutas muy dulces
+PARA REDUCIR COLESTEROL:
+- Beta-glucano de avena para reducir colesterol LDL
+- Omega-3 de pescados azules (salmón, sardina, atún)
+- Fitosteroles de legumbres y frutos secos
+- Fibra soluble de legumbres y vegetales
+- Reducir saturadas y evitar grasas trans
 
-PARA BAJAR PRESIÓN:
-- Priorizá: potasio, vegetales, pescado
-- Evitá: sal, embutidos, alimentos procesados`
+PARA OBJETIVO GENERAL:
+- Comida real, mínimamente procesada
+- Colores naturales en cada plato (vegetales de colores)
+- Proteína en cada comida (20-30g mínimo)
+- Carbohidratos complejos (integral, quinoa, legumbres)
+- Grasas saludables (aceite de oliva, palta, frutos secos)
+- Hidratación adecuada y buen descanso`
 
 function buildUserPrompt(goal: Goal, mealType: MealType, forceNew: boolean, previousRecipe?: string): string {
   const goalInfo = GOALS.find(g => g.id === goal)
@@ -96,23 +116,23 @@ function buildUserPrompt(goal: Goal, mealType: MealType, forceNew: boolean, prev
     cena: 'la CENA',
   }
 
-  const varietyHints = [
-    'Usá ingredientes diferentes a los que generalmente se usan.',
-    'Elegí una preparación que no hayas usado antes.',
-    'La receta debe ser DISTINTA, no repitas tipos de comida.',
-    'Si la receta anterior tenía X ingrediente, ahora usá ingredientes completamente diferentes.',
-  ]
-
   let hint = ''
   if (forceNew && previousRecipe) {
-    hint = `La receta anterior fue "${previousRecipe}". Ahora generá algo MUY diferente - otra categoría de comida, otros ingredientes principales, otra forma de preparación. NO repitas categorías similares.`
+    hint = `La receta anterior fue "${previousRecipe}". Ahora generá algo MUY diferente - otra categoría de comida, otros ingredientes principales, otra forma de preparación. NO repitas categorías similares ni ingredientes principales usados antes.`
   } else if (forceNew) {
-    hint = varietyHints[Math.floor(Math.random() * varietyHints.length)]
+    const hints = [
+      'Elegí ingredientes que no suelas usar juntos.',
+      'Probá una preparación nueva que nunca hayas hecho.',
+      'La receta debe ser DISTINTA de lo común.',
+    ]
+    hint = hints[Math.floor(Math.random() * hints.length)]
   }
 
   return `Generame una receta para ${mealLabels[mealType]} enfocada en: ${goalInfo?.label}
 
 ${hint}
+
+${goalInfo?.promptHint}
 
 La receta debe ser:
 - Simple y rápida (máximo 20 min de preparación)
@@ -122,7 +142,7 @@ La receta debe ser:
 - Incluir los ingredientes alternativos por si no tiene alguno
 - Incluir instrucciones breves de preparación
 - Calorías aproximadas
-- Incluir un campo "reason" corto y persuasivo (máximo 80 caracteres) de por qué esta receta ayuda a ${goalInfo?.label.toLowerCase()}
+- El campo "reason" debe ser de 1-2 oraciones, CONCRETO y basado en ingredientes específicos de esta receta. NO genérico.
 
 Respondé SOLO con el JSON, sin texto adicional.`
 }
@@ -144,7 +164,7 @@ export async function POST(request: Request) {
       model: groq(MODEL),
       messages,
       temperature: forceNew ? 1.0 : 0.9,
-      maxOutputTokens: 1400,
+      maxOutputTokens: 1500,
     })
 
     let recipe
@@ -157,7 +177,7 @@ export async function POST(request: Request) {
 
         if (!recipe.reason) {
           const goalInfo = GOALS.find(g => g.id === goal)
-          recipe.reason = `Rica en fibra y proteína, ideal para ${goalInfo?.label.toLowerCase()}`
+          recipe.reason = `Receta equilibrada ideal para ${goalInfo?.label.toLowerCase()}, diseñada para maximizar beneficios nutricionales.`
         }
 
         recipe.ingredients = recipe.ingredients.map((ing: any) => ({
